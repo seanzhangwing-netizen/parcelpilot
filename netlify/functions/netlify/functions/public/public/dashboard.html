@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ParcelPilot — Admin Console</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    .admin-container { max-width: 1200px; margin: 0 auto; padding: 24px 20px; }
+    .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .admin-title { font-size: 28px; font-weight: 800; }
+    .admin-tabs { display: flex; gap: 4px; background: var(--card-bg); padding: 4px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 24px; }
+    .admin-tab { padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; border: none; background: transparent; color: var(--text-secondary); }
+    .admin-tab.active { background: #667eea; color: white; }
+    .create-form { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group label { font-size: 13px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; }
+    .form-group input, .form-group select { padding: 12px; border-radius: 10px; border: 1px solid var(--border); font-family: Inter; font-size: 14px; background: var(--card-bg); color: var(--text); }
+    .btn-primary { padding: 12px 24px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; padding: 12px; font-size: 12px; text-transform: uppercase; color: var(--text-secondary); border-bottom: 2px solid var(--border); }
+    td { padding: 12px; font-size: 14px; border-bottom: 1px solid var(--border); }
+    .status-pill { display: inline-block; padding: 4px 12px; border-radius: 100px; font-size: 12px; font-weight: 600; }
+    select.status-select { padding: 6px; border-radius: 6px; border: 1px solid var(--border); font-size: 12px; }
+    .success-msg { padding: 12px; background: #D1FAE5; border: 1px solid #6EE7B7; border-radius: 10px; color: #065F46; margin-bottom: 16px; display: none; }
+    @media (max-width: 768px) { .create-form { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <div class="nav-brand"><span class="nav-logo">✈️</span><span class="nav-name">ParcelPilot</span><span class="nav-badge" style="background:#DC2626;color:white;">Admin</span></div>
+      <div class="nav-links">
+        <a href="/" class="nav-link">Home</a>
+        <a href="/admin.html" class="nav-link active">Console</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="admin-container">
+    <div class="admin-header">
+      <div class="admin-title">⚙️ Admin Console</div>
+      <div id="successMsg" class="success-msg">✓ Done!</div>
+    </div>
+    
+    <div class="admin-tabs">
+      <button class="admin-tab active" onclick="showTab('shipments')">📋 Shipments</button>
+      <button class="admin-tab" onclick="showTab('create')">➕ Create</button>
+    </div>
+
+    <div id="tab-shipments">
+      <div class="dashboard-card">
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr><th>ID</th><th>Recipient</th><th>Route</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="shipmentsBody"><tr><td colspan="5" style="text-align:center;padding:40px;">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-create" style="display:none;">
+      <div class="dashboard-card">
+        <form id="createForm" class="create-form">
+          <div class="form-group"><label>Recipient Name</label><input type="text" id="rName" required></div>
+          <div class="form-group"><label>Email</label><input type="email" id="rEmail"></div>
+          <div class="form-group"><label>Route</label>
+            <select id="routeSelect">
+              <option value="new-york-london">New York → London</option>
+              <option value="new-york-paris">New York → Paris</option>
+              <option value="los-angeles-tokyo">LA → Tokyo</option>
+              <option value="dubai-mumbai">Dubai → Mumbai</option>
+              <option value="singapore-sydney">Singapore → Sydney</option>
+              <option value="shanghai-los-angeles">Shanghai → LA</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Package Type</label>
+            <select id="pkgType">
+              <option>General Cargo</option><option>Electronics</option>
+              <option>Luxury Goods</option><option>Documents</option>
+              <option>Cash / Valuables</option><option>Vehicle</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Value ($)</label><input type="number" id="pkgVal" value="1000"></div>
+          <div><button type="submit" class="btn-primary" style="margin-top:24px;">🚀 Create Shipment</button></div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function showTab(tab) {
+      document.querySelectorAll('.admin-tab').forEach(t=>t.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById('tab-shipments').style.display = tab === 'shipments' ? 'block' : 'none';
+      document.getElementById('tab-create').style.display = tab === 'create' ? 'block' : 'none';
+      if (tab === 'shipments') loadShipments();
+    }
+
+    async function loadShipments() {
+      const tbody = document.getElementById('shipmentsBody');
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;">Loading...</td></tr>';
+      try {
+        const res = await fetch('/api/shipments');
+        const data = await res.json();
+        if (!data.shipments || data.shipments.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;">No shipments yet.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = data.shipments.map(s => `<tr>
+          <td><strong>${s.trackingId}</strong></td>
+          <td>${s.recipientName || '—'}</td>
+          <td style="font-size:13px;">${s.origin} → ${s.destination}</td>
+          <td><span class="status-pill" style="background:${({pending:'#6B7280',picked_up:'#3B82F6',in_transit:'#3B82F6',customs_hold:'#F59E0B',customs_cleared:'#10B981',out_for_delivery:'#10B981',delivered:'#10B981'})[s.status]||'#6B7280'}20;color:${({pending:'#6B7280',picked_up:'#3B82F6',in_transit:'#3B82F6',customs_hold:'#F59E0B',customs_cleared:'#10B981',out_for_delivery:'#10B981',delivered:'#10B981'})[s.status]||'#6B7280'};">${s.status.replace(/_/g,' ')}</span></td>
+          <td>
+            <select class="status-select" onchange="updateStatus('${s.trackingId}',this.value)">
+              <option value="">Update...</option>
+              <option value="picked_up">📥 Collected</option>
+              <option value="in_transit">🚚 In Transit</option>
+              <option value="customs_hold">🛃 Customs Hold</option>
+              <option value="customs_cleared">✅ Cleared</option>
+              <option value="delivered">✅ Delivered</option>
+            </select>
+          </td>
+        </tr>`).join('');
+      } catch(e) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:#DC2626;">Error loading</td></tr>'; }
+    }
+
+    async function updateStatus(id, status) {
+      if (!status) return;
+      let customsAmount = null;
+      if (status === 'customs_hold') {
+        customsAmount = prompt('Customs amount ($):', '499');
+        if (!customsAmount || isNaN(customsAmount)) return;
+      }
+      const res = await fetch('/api/shipments/' + id + '/status', {
+        method: 'PUT', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ status, customsAmount: parseFloat(customsAmount) })
+      });
+      const data = await res.json();
+      if (data.success) { loadShipments(); document.getElementById('successMsg').style.display = 'block'; setTimeout(()=>document.getElementById('successMsg').style.display='none',3000); }
+      else alert('Error: ' + data.error);
+    }
+
+    document.getElementById('createForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = e.target.querySelector('button');
+      btn.textContent = '⏳ Creating...';
+      const res = await fetch('/api/shipments', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          recipientName: document.getElementById('rName').value,
+          email: document.getElementById('rEmail').value,
+          route: document.getElementById('routeSelect').value,
+          packageType: document.getElementById('pkgType').value,
+          packageValue: document.getElementById('pkgVal').value,
+        })
+      });
+      const data = await res.json();
+      if (data.success) { alert('✅ Created: ' + data.trackingId); showTab('shipments'); loadShipments(); }
+      else alert('Error');
+      btn.textContent = '🚀 Create Shipment';
+    });
+
+    loadShipments();
+  </script>
+</body>
+</html>
