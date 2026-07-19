@@ -1,0 +1,19 @@
+[build]
+  command = "echo 'done'"
+  publish = "public"
+  functions = "netlify/functions"
+
+[functions]
+  external_node_modules = ["express", "uuid", "resend"]
+  node_bundler = "esbuild"
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/*"
+  to = "/:splat"
+  status = 200
