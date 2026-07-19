@@ -1,0 +1,10 @@
+{
+  "name": "parcelpilot",
+  "version": "1.0.0",
+  "dependencies": {
+    "express": "^4.18.2",
+    "uuid": "^9.0.0",
+    "serverless-http": "^3.2.0",
+    "resend": "^4.0.0"
+  }
+}
